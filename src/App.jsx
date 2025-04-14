@@ -23,6 +23,8 @@ function CardContent({ children }) {
 export default function TodoApp() {
   const [tasks, setTasks] = useState([]);
   const [input, setInput] = useState("");
+  const [editingId, setEditingId] = useState(null);
+  const [editedText, setEditedText] = useState("");
 
   const addTask = () => {
     if (input.trim()) {
@@ -39,6 +41,34 @@ export default function TodoApp() {
     setTasks(tasks.filter(task => task.id !== id));
   };
 
+  const startEditing = (id, text) => {
+    setEditingId(id);
+    setEditedText(text);
+  };
+
+  const saveEdit = () => {
+    setTasks(tasks.map(task => task.id === editingId ? { ...task, text: editedText } : task));
+    setEditingId(null);
+    setEditedText("");
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditedText("");
+  };
+
+  const sortTasks = (order) => {
+    const sortedTasks = [...tasks];
+    if (order === "asc") {
+      sortedTasks.sort((a, b) => a.text.localeCompare(b.text));
+    } else if (order === "desc") {
+      sortedTasks.sort((a, b) => b.text.localeCompare(a.text));
+    } else if (order === "done") {
+      sortedTasks.sort((a, b) => b.done - a.done); // Done tasks appear at the top
+    }
+    setTasks(sortedTasks);
+  };
+
   return (
     <div style={styles.container}>
       <div style={styles.row}>
@@ -49,6 +79,13 @@ export default function TodoApp() {
         />
         <Button onClick={addTask}>Add</Button>
       </div>
+
+      <div style={styles.row}>
+        <Button onClick={() => sortTasks("asc")}>Sort A-Z</Button>
+        <Button onClick={() => sortTasks("desc")}>Sort Z-A</Button>
+        <Button onClick={() => sortTasks("done")}>Sort by Completed</Button>
+      </div>
+
       <div style={styles.taskList}>
         {tasks.map(task => (
           <Card key={task.id}>
@@ -57,7 +94,22 @@ export default function TodoApp() {
                 checked={task.done}
                 onChange={() => toggleTask(task.id)}
               />
-              <span style={{ textDecoration: task.done ? "line-through" : "none", marginLeft: 8 }}>{task.text}</span>
+              {editingId === task.id ? (
+                <>
+                  <Input
+                    value={editedText}
+                    onChange={(e) => setEditedText(e.target.value)}
+                    placeholder="Edit task"
+                  />
+                  <Button onClick={saveEdit}>Save</Button>
+                  <Button onClick={cancelEdit}>Cancel</Button>
+                </>
+              ) : (
+                <>
+                  <span style={{ textDecoration: task.done ? "line-through" : "none", marginLeft: 8 }}>{task.text}</span>
+                  <Button onClick={() => startEditing(task.id, task.text)}>Edit</Button>
+                </>
+              )}
             </CardContent>
             <Button onClick={() => removeTask(task.id)}>✕</Button>
           </Card>
